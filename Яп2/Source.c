@@ -1,9 +1,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
-#include <string.h>
 #include <ctype.h>
-#include <stdbool.h>
+#include <string.h>
 #include <time.h>
+#include <stdbool.h>
 #include <math.h>
 #define MAX 1000
 
@@ -33,95 +33,165 @@ void changeNtoL(char* strLetters, char* strNumbers, char mchar[10], int mint[10]
 }
 
 // замена строки на число
-void changeLtoN (char* strLetters, char* strNumbers, char mchar[10], int mint[10]) {
+void changeLtoN(char* strLetters, char* strNumbers, char mchar[10], int mint[10]) {
 	int num;
 	char l[2] = { '\0' };
 	num = findN(strLetters, mchar, mint);
 	_itoa(num, l, 10);
 	for (int i = 0; strNumbers[i] != '\0'; i++)
-	if (strNumbers[i] == l[0]) strNumbers[i] = strLetters;
+		if (strNumbers[i] == l[0]) strNumbers[i] = strLetters;
 }
 
 //Функция проверки найденного решения
-int checking(char* str, bool* match, int* attempts)
+void checking(char* str, char words[][MAX], char* answer, int* still_Letters, bool* match, int* attempts, int* wordsLen, int answerLen)
 {
-	int numbers[7] = { 0 };
-	int n = 0, i = 0, answer = 0;
-	char digit[2];
+	int sumNum[7] = { 0 };
+	int sumAnswer = 0, minDigits = 0;
+	char c;
+	char digit[2] = { '\0' };
+	for (int i = 1; !*still_Letters && i <= answerLen; i++)
+	{
+		for (int j = 0; !*still_Letters && words[j][0]; j++)
+		{
 
+			c = words[j][wordsLen[j] - i];
+			if (48 <= c && c <= 57)
+			{
+				digit[0] = c;
+
+				sumNum[j] += atoi(digit) * (int)pow(10, minDigits);
+			}
+			if ((65 <= c && c <= 90))
+			{
+				*still_Letters = 1;
+			}
+		}
+		c = answer[answerLen - i];
+		if (48 <= c && c <= 57)
+		{
+			digit[0] = c;
+
+			sumAnswer += atoi(digit) * (int)pow(10, minDigits);
+		}
+		if ((65 <= c && c <= 90))
+		{
+			*still_Letters = 1;
+		}
+		if (*still_Letters == 0)
+		{
+			minDigits++;
+		}
+	}
+
+	int sumAll = 0;
+	for (int i = 0; i < 7; i++)
+	{
+		sumAll += sumNum[i];
+	}
+	if (!minDigits)
+		*match = true;
+	else if (!*still_Letters)
+	{
+		if (sumAll == sumAnswer)
+			*match = true;
+	}
+	else
+	{
+		int numDivider = (int)pow(10, minDigits);
+		if (sumAll % numDivider == sumAnswer % numDivider)
+			*match = true;
+	}
+	(*attempts)++;
+}
+
+// разбиение строки на слова
+void partitioning(char* str, char words[][MAX], char* answer)
+{
+	int i = 0;
+	int j = 0;
+	int wordsCount = 0;
 	for (i; str[i] != '='; i++)
 	{
-		if (isalpha(str[i])) return 0;//проверка является ли введенное число буквой
-		if (str[i] == '+') n++;
-		if (isdigit(str[i]))//проверка является ли введенное число десятичной цифрой
+		if ((48 <= str[i] && str[i] <= 57) || (65 <= str[i] && str[i] <= 90))
 		{
-			digit[0] = str[i];
-			numbers[n] = numbers[n] * 10 + atoi(digit);
+			words[wordsCount][j] = str[i];
+			j++;
+		}
+		if (str[i] == '+')
+		{
+			wordsCount++;
+			j = 0;
 		}
 	}
+	j = 0;
 	for (i; str[i] != '\0'; i++)
 	{
-		if (isalpha(str[i])) return 0;
-		if (isdigit(str[i]))
+		if ((48 <= str[i] && str[i] <= 57) || (65 <= str[i] && str[i] <= 90))
 		{
-			digit[0] = str[i];
-			answer = answer * 10 + atoi(digit);//число в строку
+			answer[j] = str[i];
+			j++;
 		}
 	}
-	int sum = 0;
-	for (int i = 0; i < n + 1; i++)
-		sum += numbers[i];
-	if (sum == answer)
-		*match = 1;
-	(*attempts)++;
-	return 1;
 }
 
 //рекурсивная функция, выполняющая полный перебор
-char* recovery(char* str, char mchar[10], int mint[10], int* attempts)
+char* recovery(char* str, char mchar[10], int mint[10], int* attempts, int* wordsLen, int answerLen)
 {
 	char strNumbers[MAX];
 	char* result = NULL;
-	bool isbegining = false; 
+	bool isbegining = false;
 	bool match = false;
 	strncpy(strNumbers, str, strlen(str) + 1);
+	int still_Letters = 0;
+	char words[7][MAX] = { 0 };
+	char answer[MAX] = { 0 };
 
-	if (checking(strNumbers, &match, attempts) == 1)// Функция проверки найденного решения
-	{
-		if (match) return strNumbers;
-		else return 0;
-	}
-	
+	partitioning(strNumbers, words, answer);
+
+	checking(strNumbers, words, answer, &still_Letters, &match, attempts, wordsLen, answerLen);
+	if (match) { if (!still_Letters)return strNumbers; }
+	else return 0;
+
 	char letter;
-	char c;
-	for (int i = 0; i <= strlen(strNumbers); i++)
+	char c = 0;
+	int found = 0;
+	int strlenWords[7];
+	for (int i = 0; i < 7 && words[i][0]; i++)
+		strlenWords[i] = strlen(words[i]);
+	int strlenAnswer = strlen(answer);
+
+	for (int i = 1; !found; i++)
 	{
-
-		if (isalpha(strNumbers[i]) || strNumbers[i] == '\0')
+		for (int j = 0; words[j][0] && !found; j++)
 		{
-			c = strNumbers[i];
-			if (i == 0 || strNumbers[i - 1] == ' ') isbegining = true;
-			break;
-		}
-	}
-	letter = c;
-
-	for (; findN(letter, mchar, mint) != -1;)
-	{
-		for (int i = 0; i <= strlen(strNumbers); i++)
-		{
-
-			if (isalpha(strNumbers[i]) || strNumbers[i] == '\0')
+			c = words[j][strlenWords[j] - i];
+			if ((65 <= c && c <= 90))
 			{
-				c = strNumbers[i];
-				if (i == 0 || strNumbers[i - 1] == ' ') isbegining = true;
-				break;
+				letter = c;
+				found = 1;
 			}
 		}
-		letter = c;
-		if (letter == '\0') return 0;
+		c = answer[strlenAnswer - i];
+		if ((65 <= c && c <= 90))
+		{
+			letter = c;
+			found = 1;
+		}
 	}
-	
+
+	if (letter == '\0') return 0;
+	if (found &&strNumbers[0] == letter)
+		isbegining = true;
+	else {
+		int i = 1;
+		while (strNumbers[i])
+		{
+			if (found && strNumbers[i] == letter && strNumbers[i - 1] == ' ')
+				isbegining = true;
+			i++;
+		}
+	}
+
 	int count = 0;
 	if (isbegining)count = 1;
 	for (count; count <= 10; count++)
@@ -135,7 +205,7 @@ char* recovery(char* str, char mchar[10], int mint[10], int* attempts)
 
 		changeNtoL(str, strNumbers, mchar, mint);
 		//printf("%s\n", strNumbers);
-		result = (recovery(strNumbers, mchar, mint, attempts));
+		result = (recovery(strNumbers, mchar, mint, attempts, wordsLen, answerLen));
 		if (!result)
 		{
 			changeLtoN(letter, strNumbers, mchar, mint);
@@ -148,16 +218,25 @@ char* recovery(char* str, char mchar[10], int mint[10], int* attempts)
 
 int main()
 {
+	static char answer[MAX] = { 0 };
+	int answerLen;int wordsLen[7]; static char words[7][MAX] = { 0 };
 	char str[MAX];
 	int attempts = 0;
-	char mchar[10] = {NULL};
-	int mint[10] = {NULL};
+	char mchar[10] = { NULL };
+	int mint[10] = { NULL };
 	clock_t time1, time2;
 	printf("%s\n", "enter the rebus:");
 	gets(str);
 
+	partitioning(str, words, answer);
+	for (int i = 0; i < 7 && words[i][0]; i++)
+	{
+		wordsLen[i] = strlen(words[i]);
+	}
+	answerLen = strlen(answer);
+
 	time1 = clock();
-	printf("%s\n", recovery(str, mchar, mint, &attempts));
+	printf("%s\n", recovery(str, mchar, mint, &attempts, wordsLen, answerLen));
 	time2 = clock();
 	printf("number of attempts: %d\n", attempts);
 	printf("time spent: %.10f seconds", ((float)(time2 - time1) / CLK_TCK));
