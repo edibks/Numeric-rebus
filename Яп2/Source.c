@@ -45,7 +45,7 @@ void changeLtoN(char* strLetters, char* strNumbers, char mchar[10], int mint[10]
 //Функция проверки найденного решения
 void checking(char* str, char words[][MAX], char* answer, int* still_Letters, bool* match, int* attempts, int* wordsLen, int answerLen)
 {
-	int sumNum[7] = { 0 };
+	int sumNum= 0;
 	int sumAnswer = 0, minDigits = 0;
 	char c;
 	char digit[2] = { '\0' };
@@ -59,7 +59,7 @@ void checking(char* str, char words[][MAX], char* answer, int* still_Letters, bo
 			{
 				digit[0] = c;
 
-				sumNum[j] += atoi(digit) * (int)pow(10, minDigits);
+				sumNum += atoi(digit) * (int)pow(10, minDigits);
 			}
 			if ((65 <= c && c <= 90))
 			{
@@ -83,22 +83,17 @@ void checking(char* str, char words[][MAX], char* answer, int* still_Letters, bo
 		}
 	}
 
-	int sumAll = 0;
-	for (int i = 0; i < 7; i++)
-	{
-		sumAll += sumNum[i];
-	}
 	if (!minDigits)
 		*match = true;
 	else if (!*still_Letters)
 	{
-		if (sumAll == sumAnswer)
+		if (sumNum == sumAnswer)
 			*match = true;
 	}
 	else
 	{
 		int numDivider = (int)pow(10, minDigits);
-		if (sumAll % numDivider == sumAnswer % numDivider)
+		if (sumNum % numDivider == sumAnswer % numDivider)
 			*match = true;
 	}
 	(*attempts)++;
@@ -180,15 +175,17 @@ char* recovery(char* str, char mchar[10], int mint[10], int* attempts, int* word
 	}
 
 	if (letter == '\0') return 0;
-	if (found &&strNumbers[0] == letter)
-		isbegining = true;
-	else {
-		int i = 1;
-		while (strNumbers[i])
-		{
-			if (found && strNumbers[i] == letter && strNumbers[i - 1] == ' ')
-				isbegining = true;
-			i++;
+	if (found) {
+		if (strNumbers[0] == letter)
+			isbegining = true;
+		else {
+			int i = 1;
+			while (strNumbers[i])
+			{
+				if (strNumbers[i] == letter && strNumbers[i - 1] == ' ')
+					isbegining = true;
+				i++;
+			}
 		}
 	}
 
